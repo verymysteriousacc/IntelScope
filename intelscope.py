@@ -1,4 +1,4 @@
-from modules.username import search_username
+from modules.username import username_menu
 from modules.domain import domain_lookup
 from modules.ip import ip_lookup
 from modules.url import analyze_url
@@ -15,31 +15,7 @@ def pause():
     input("\nPress Enter to continue...")
 
 def username_search():
-    username = input("\nUsername > ").strip()
-
-    if not username:
-        print("Username cannot be empty.")
-        pause()
-        return
-
-    print(f"\nSearching public profiles for @{username}...\n")
-
-    results = search_username(username)
-
-    for result in results:
-        status = result["status"]
-        site = result["site"]
-
-        if status == "FOUND":
-            print(f"[+] {site}: FOUND")
-            print(f"    {result['final_url']}")
-        elif status == "NOT FOUND":
-            print(f"[-] {site}: NOT FOUND")
-        elif status == "RESTRICTED":
-            print(f"[!] {site}: RESTRICTED")
-        else:
-            print(f"[?] {site}: {status}")
-
+    username_menu()
     pause()
 
 def domain_search():
