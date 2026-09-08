@@ -1,5 +1,6 @@
 from modules.username import search_username
 from modules.domain import domain_lookup
+from modules.ip import ip_lookup
 
 def banner():
     print("""
@@ -9,12 +10,15 @@ def banner():
 ╚════════════════════════════════╝
 """)
 
+def pause():
+    input("\nPress Enter to continue...")
+
 def username_search():
     username = input("\nUsername > ").strip()
 
     if not username:
         print("Username cannot be empty.")
-        input("\nPress Enter...")
+        pause()
         return
 
     print(f"\nSearching public profiles for @{username}...\n")
@@ -35,14 +39,14 @@ def username_search():
         else:
             print(f"[?] {site}: {status}")
 
-    input("\nPress Enter to continue...")
+    pause()
 
 def domain_search():
     domain = input("\nDomain > ").strip()
 
     if not domain:
         print("Domain cannot be empty.")
-        input("\nPress Enter...")
+        pause()
         return
 
     print(f"\nLooking up public information for {domain}...\n")
@@ -71,10 +75,10 @@ def domain_search():
         print(f"Name: {rdap.get('name')}")
         print(f"Handle: {rdap.get('handle')}")
 
-        status = rdap.get("status", [])
+        statuses = rdap.get("status", [])
 
-        if status:
-            print(f"Status: {', '.join(status)}")
+        if statuses:
+            print(f"Status: {', '.join(statuses)}")
 
         nameservers = rdap.get("nameservers", [])
 
@@ -86,7 +90,30 @@ def domain_search():
     else:
         print("RDAP information unavailable.")
 
-    input("\nPress Enter to continue...")
+    pause()
+
+def ip_search():
+    ip = input("\nIP > ").strip()
+
+    if not ip:
+        print("IP cannot be empty.")
+        pause()
+        return
+
+    print(f"\nLooking up public information for {ip}...\n")
+
+    result = ip_lookup(ip)
+
+    if not result:
+        print("Unable to retrieve public IP information.")
+        pause()
+        return
+
+    for key, value in result.items():
+        if value is not None:
+            print(f"{key.title()}: {value}")
+
+    pause()
 
 def main():
     while True:
@@ -107,12 +134,11 @@ def main():
             domain_search()
 
         elif choice == "3":
-            print("\nIP Lookup isn't implemented yet.")
-            input("\nPress Enter...")
+            ip_search()
 
         elif choice == "4":
             print("\nURL Analysis isn't implemented yet.")
-            input("\nPress Enter...")
+            pause()
 
         elif choice == "5":
             print("\nGoodbye.")
@@ -120,7 +146,7 @@ def main():
 
         else:
             print("\nInvalid option.")
-            input("\nPress Enter...")
+            pause()
 
 if __name__ == "__main__":
     main()
