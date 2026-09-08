@@ -1,100 +1,52 @@
-import requests
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from modules.platforms import github, reddit, instagram, tiktok, youtube, x, twitch
 
-SITES = {
-    "Instagram": "https://www.instagram.com/{}/",
-    "GitHub": "https://github.com/{}/",
-    "Reddit": "https://www.reddit.com/user/{}/",
-    "TikTok": "https://www.tiktok.com/@{}",
-    "YouTube": "https://www.youtube.com/@{}",
-    "X": "https://x.com/{}",
-    "Twitch": "https://www.twitch.tv/{}",
-    "Pinterest": "https://www.pinterest.com/{}/",
-    "SoundCloud": "https://soundcloud.com/{}",
-    "GitLab": "https://gitlab.com/{}",
-    "Codeberg": "https://codeberg.org/{}",
-    "Keybase": "https://keybase.io/{}",
-    "Dev.to": "https://dev.to/{}",
-    "Medium": "https://medium.com/@{}",
-    "BuyMeACoffee": "https://buymeacoffee.com/{}",
-    "Patreon": "https://www.patreon.com/{}",
-    "Kaggle": "https://www.kaggle.com/{}",
-    "Docker Hub": "https://hub.docker.com/u/{}",
-    "Hugging Face": "https://huggingface.co/{}",
-    "PyPI": "https://pypi.org/user/{}/",
-    "Replit": "https://replit.com/@{}",
-    "Steam": "https://steamcommunity.com/id/{}/",
-    "Linktree": "https://linktr.ee/{}",
-    "Gravatar": "https://gravatar.com/{}",
-    "Flickr": "https://www.flickr.com/people/{}/"
+PLATFORMS = {
+    "1": ("GitHub", github.search),
+    "2": ("Reddit", reddit.search),
+    "3": ("Instagram", instagram.search),
+    "4": ("TikTok", tiktok.search),
+    "5": ("YouTube", youtube.search),
+    "6": ("X", x.search),
+    "7": ("Twitch", twitch.search)
 }
 
-HEADERS = {
-    "User-Agent": "IntelScope/1.0 (Public OSINT Research)"
-}
+def username_menu():
+    print("\nSelect platform\n")
+    
+    for key, (name, _) in PLATFORMS.items():
+        print(f"[{key}] {name}")
+    
+    print("[8] Back")
 
-def check_site(site, template, username):
-    url = template.format(username)
+    choice = input("\nPlatform > ").strip()
+
+    if choice == "8":
+        return
+
+    if choice not in PLATFORMS:
+        print("\nInvalid option.")
+        return
+
+    username = input("\nUsername > ").strip().lstrip("@")
+
+    if not username:
+        print("Username cannot be empty.")
+        return
+
+    name, search = PLATFORMS[choice]
+
+    print(f"\nScanning public {name} information for @{username}...\n")
 
     try:
-        response = requests.get(
-            url,
-            headers=HEADERS,
-            timeout=10,
-            allow_redirects=True
-        )
+        result = search(username)
+    except Exception as error:
+        print(f"Error: {error}")
+        return
 
-        final_url = response.url
+    if not result:
+        print("No public information found.")
+        return
 
-        if response.status_code == 200:
-            status = "FOUND"
-        elif response.status_code == 404:
-            status = "NOT FOUND"
-        elif response.status_code in (401, 403):
-            status = "RESTRICTED"
-        elif 300 <= response.status_code < 400:
-            status = "REDIRECT"
-        else:
-            status = f"HTTP {response.status_code}"
-
-        return {
-            "site": site,
-            "url": url,
-            "final_url": final_url,
-            "status": status,
-            "code": response.status_code
-        }
-
-    except requests.Timeout:
-        return {
-            "site": site,
-            "url": url,
-            "final_url": None,
-            "status": "TIMEOUT",
-            "code": None
-        }
-
-    except requests.RequestException:
-        return {
-            "site": site,
-            "url": url,
-            "final_url": None,
-            "status": "ERROR",
-            "code": None
-        }
-
-def search_username(username):
-    username = username.strip().lstrip("@")
-
-    results = []
-
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        tasks = [
-            executor.submit(check_site, site, template, username)
-            for site, template in SITES.items()
-        ]
-
-        for task in as_completed(tasks):
-            results.append(task.result())
-
-    return sorted(results, key=lambda x: x["site"].lower())
+    for key, value in result.items():
+        if value is not None:
+            print(f"{key.title()}: {value}")
