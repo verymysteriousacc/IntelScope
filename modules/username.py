@@ -1,6 +1,17 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from modules.platforms import github, reddit, instagram, tiktok, youtube, x, twitch
+from modules.platforms import (
+    github,
+    reddit,
+    instagram,
+    tiktok,
+    youtube,
+    x,
+    twitch,
+    roblox,
+    discord
+)
+
 from modules.correlation import correlate
 
 PLATFORMS = {
@@ -10,7 +21,9 @@ PLATFORMS = {
     "4": ("TikTok", tiktok.search),
     "5": ("YouTube", youtube.search),
     "6": ("X", x.search),
-    "7": ("Twitch", twitch.search)
+    "7": ("Twitch", twitch.search),
+    "8": ("Roblox", roblox.search),
+    "9": ("Discord", discord.search)
 }
 
 def print_value(name, value):
@@ -64,7 +77,16 @@ def print_generic(data):
             print(f"\n{key.replace('_', ' ').title()}")
 
             for item in value:
-                print(f"  • {item}")
+                if isinstance(item, dict):
+                    print()
+
+                    for sub_key, sub_value in item.items():
+                        print_value(
+                            f"  {sub_key.replace('_', ' ').title()}",
+                            sub_value
+                        )
+                else:
+                    print(f"  • {item}")
 
         elif value is not None and value != "":
             print(f"{key.replace('_', ' ').title()}: {value}")
@@ -141,7 +163,10 @@ def scan_platform(platform, search, username):
 def scan_all(username):
     results = {}
 
-    with ThreadPoolExecutor(max_workers=len(PLATFORMS)) as executor:
+    with ThreadPoolExecutor(
+        max_workers=len(PLATFORMS)
+    ) as executor:
+
         tasks = [
             executor.submit(
                 scan_platform,
@@ -163,9 +188,15 @@ def scan_all(username):
             results[platform] = result
 
             if result:
-                print(f"[+] {platform}: public information found")
+                print(
+                    f"[+] {platform}: "
+                    "public information found"
+                )
             else:
-                print(f"[-] {platform}: not found")
+                print(
+                    f"[-] {platform}: "
+                    "not found"
+                )
 
     return results
 
@@ -175,25 +206,32 @@ def username_menu():
     for key, (name, _) in PLATFORMS.items():
         print(f"[{key}] {name}")
 
-    print("[8] All Platforms")
-    print("[9] Back")
+    print("[10] All Platforms")
+    print("[11] Back")
 
     choice = input("\nPlatform > ").strip()
 
-    if choice == "9":
+    if choice == "11":
         return
 
-    username = input("\nUsername > ").strip().lstrip("@")
+    username = input(
+        "\nUsername > "
+    ).strip().lstrip("@")
 
     if not username:
         print("Username cannot be empty.")
         return
 
-    if choice == "8":
-        print("\nScanning public profiles...\n")
+    if choice == "10":
+        print(
+            "\nScanning public profiles...\n"
+        )
 
         results = scan_all(username)
-        correlation = correlate(username, results)
+        correlation = correlate(
+            username,
+            results
+        )
 
         print_correlation(correlation)
 
