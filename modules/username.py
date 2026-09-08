@@ -1,3 +1,5 @@
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 from modules.platforms import github, reddit, instagram, tiktok, youtube, x, twitch
 from modules.correlation import correlate
 
@@ -130,24 +132,40 @@ def print_correlation(data):
                 f"{item.get('value')}"
             )
 
+def scan_platform(platform, search, username):
+    try:
+        return platform, search(username), None
+    except Exception as error:
+        return platform, None, str(error)
+
 def scan_all(username):
     results = {}
 
-    for key, (name, search) in PLATFORMS.items():
-        print(f"[>] Checking {name}...")
+    with ThreadPoolExecutor(max_workers=len(PLATFORMS)) as executor:
+        tasks = [
+            executor.submit(
+                scan_platform,
+                name,
+                search,
+                username
+            )
+            for name, search in PLATFORMS.values()
+        ]
 
-        try:
-            result = search(username)
-            results[name] = result
+        for task in as_completed(tasks):
+            platform, result, error = task.result()
+
+            if error:
+                print(f"[!] {platform}: {error}")
+                results[platform] = None
+                continue
+
+            results[platform] = result
 
             if result:
-                print(f"[+] {name}: public information found")
+                print(f"[+] {platform}: public information found")
             else:
-                print(f"[-] {name}: not found")
-
-        except Exception as error:
-            print(f"[!] {name}: {error}")
-            results[name] = None
+                print(f"[-] {platform}: not found")
 
     return results
 
@@ -175,7 +193,6 @@ def username_menu():
         print("\nScanning public profiles...\n")
 
         results = scan_all(username)
-
         correlation = correlate(username, results)
 
         print_correlation(correlation)
