@@ -1,4 +1,5 @@
 from modules.platforms import github, reddit, instagram, tiktok, youtube, x, twitch
+from modules.correlation import correlate
 
 PLATFORMS = {
     "1": ("GitHub", github.search),
@@ -46,7 +47,6 @@ def print_github(data):
 
         for index, repo in enumerate(repositories, 1):
             print(f"\n[{index}] {repo.get('name')}")
-
             print_value("    Description", repo.get("description"))
             print_value("    URL", repo.get("url"))
             print_value("    Language", repo.get("language"))
@@ -55,19 +55,6 @@ def print_github(data):
             print_value("    Open Issues", repo.get("open_issues"))
             print_value("    Created", repo.get("created"))
             print_value("    Updated", repo.get("updated"))
-
-    activity = data.get("recent_public_activity", [])
-
-    if activity:
-        print("\nRecent Public Activity")
-        print("──────────────────────")
-
-        for event in activity:
-            print(
-                f"{event.get('created')} | "
-                f"{event.get('type')} | "
-                f"{event.get('repository')}"
-            )
 
 def print_generic(data):
     for key, value in data.items():
@@ -80,21 +67,102 @@ def print_generic(data):
         elif value is not None and value != "":
             print(f"{key.replace('_', ' ').title()}: {value}")
 
+def print_correlation(data):
+    print("\nACCOUNT CORRELATION")
+    print("══════════════════")
+
+    print(f"\nTarget: @{data['target']}")
+    print(f"Confidence: {data['confidence']}")
+    print(f"Correlation Score: {data['score']}/100")
+
+    accounts = data.get("accounts", [])
+
+    if accounts:
+        print("\nPUBLIC ACCOUNTS")
+        print("───────────────")
+
+        for account in accounts:
+            print(
+                f"[+] {account['platform']}: "
+                f"@{account['username']}"
+            )
+
+            if account.get("url"):
+                print(f"    {account['url']}")
+
+    names = data.get("display_names", [])
+
+    if names:
+        print("\nPUBLIC DISPLAY NAMES")
+        print("────────────────────")
+
+        for name in names:
+            print(f"• {name}")
+
+    domains = data.get("domains", [])
+
+    if domains:
+        print("\nPUBLIC DOMAINS")
+        print("──────────────")
+
+        for domain in domains:
+            print(f"• {domain}")
+
+    links = data.get("public_links", [])
+
+    if links:
+        print("\nPUBLIC LINKS")
+        print("────────────")
+
+        for link in links:
+            print(f"• {link}")
+
+    evidence = data.get("evidence", [])
+
+    if evidence:
+        print("\nCORRELATION EVIDENCE")
+        print("────────────────────")
+
+        for item in evidence:
+            print(
+                f"[{item.get('score', 0)}] "
+                f"{item.get('type')} → "
+                f"{item.get('value')}"
+            )
+
+def scan_all(username):
+    results = {}
+
+    for key, (name, search) in PLATFORMS.items():
+        print(f"[>] Checking {name}...")
+
+        try:
+            result = search(username)
+            results[name] = result
+
+            if result:
+                print(f"[+] {name}: public information found")
+            else:
+                print(f"[-] {name}: not found")
+
+        except Exception as error:
+            print(f"[!] {name}: {error}")
+            results[name] = None
+
+    return results
+
 def username_menu():
     print("\nSelect platform\n")
 
     for key, (name, _) in PLATFORMS.items():
         print(f"[{key}] {name}")
 
-    print("[8] Back")
+    print("[8] All Platforms")
+    print("[9] Back")
 
     choice = input("\nPlatform > ").strip()
 
-    if choice == "8":
-        return
-
-    if choice not in PLATFORMS:
-        print("\nInvalid option.")
+    if choice == "9":
         return
 
     username = input("\nUsername > ").strip().lstrip("@")
@@ -103,9 +171,27 @@ def username_menu():
         print("Username cannot be empty.")
         return
 
+    if choice == "8":
+        print("\nScanning public profiles...\n")
+
+        results = scan_all(username)
+
+        correlation = correlate(username, results)
+
+        print_correlation(correlation)
+
+        return
+
+    if choice not in PLATFORMS:
+        print("\nInvalid option.")
+        return
+
     name, search = PLATFORMS[choice]
 
-    print(f"\nScanning public {name} information for @{username}...\n")
+    print(
+        f"\nScanning public {name} information "
+        f"for @{username}...\n"
+    )
 
     try:
         result = search(username)
