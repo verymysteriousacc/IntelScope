@@ -133,11 +133,11 @@ def main():
     while True:
         banner()
 
-        print("[1] Username Search")
-        print("[2] Domain Lookup")
-        print("[3] IP Lookup")
-        print("[4] URL Analysis")
-        print("[5] Exit")
+        print("UDMUX")
+        print("DOS")
+        print("SPAM REQUESTS")
+        print("SERVER IDENTIFIER (doesnt work all the time for some reason)")
+        print("Exit")
 
         choice = input("\nIntelScope > ").strip()
 
