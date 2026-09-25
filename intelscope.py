@@ -7,7 +7,7 @@ def banner():
     print("""
 ╔════════════════════════════════╗
 ║          IntelScope            ║
-║      Public OSINT Toolkit      ║
+║      Your local website takedown     ║
 ╚════════════════════════════════╝
 """)
 
